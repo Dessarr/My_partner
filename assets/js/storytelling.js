@@ -12,6 +12,9 @@ let currentLine = 0;
 let typing = false;
 let isTransitioning = false;
 let typingCompleted = false;
+// Flags untuk kontrol animasi dan interaksi di last-parallax
+let lastParallaxAnimRunning = false; // sedang animasi grow-in
+let lastParallaxAnimDone = false;    // animasi grow-in selesai
 
 // Get all sections
 const sections = document.querySelectorAll('.section');
@@ -129,7 +132,7 @@ const section12StoryLines = [
     "Speaking of LEGO gua ambil magang demi bisa jalan bareng lu ke LEGO Sumrec. Gua siapin duitnya karena gua pengen beliin elu. Tapi ternyata nggak pernah jalan.",
     "Dan sekarang kita udah ada jarak(?) akhirnya ya, gitu. and i was at my lowest i think when u said u got a bf at ur wa channel",
     "Its almost end of my letters, and disclaimer, jangan diambil hati kalau my POV di sini berbeda dengan kenyataanya apa yang lu hadepin, gua support terus.",
-    "Even at my anger state i still want to support you, gua akan tetep berusaha cari maksud dari terkadang tindakan lu, gak semerta merta dari Pov gua doang.",
+    "Even at my anger state i still want to support you, gua akan tetep berusaha cari maksud dari tindakan lu, gak semerta merta dari Pov gua doang.",
     "Last but not least, gua really appreciate all the moments we had together. All the memories we shared. All the laughs we had. All the tears we cried. All the support we gave each other. All the love we shared. I love you, Zum.",
 ];
 
@@ -493,15 +496,34 @@ function transitionToLastParallax() {
         if (lastParallaxIndex !== -1) {
             currentSection = lastParallaxIndex;
             currentText = 0;
+            // Siapkan animasi grow-in untuk elemen last-parallax dan nonaktifkan parallax JS
+            lastParallaxAnimRunning = true;
+            lastParallaxAnimDone = false;
+            const ids = ['awan-last','bulan-last','tumpukan-10','tumpukan-2','tumpukan-3','tumpukan-4','tumpukan-5','tumpukan-6','tumpukan-7','tumpukan-8','tumpukan-9','tumpukan-depan'];
+            const lastEls = ids.map(id => document.getElementById(id)).filter(Boolean);
+            lastEls.forEach(el => {
+                el.classList.remove('grow-anim');
+                el.classList.add('grow-start');
+            });
             
             // Smooth scroll to last parallax section
             const targetY = lastParallaxSection.offsetTop;
-            
-            smoothScrollTo(targetY, 4000).then(() => {
-                // After scroll is complete, return to scroll mode
-                mode = "scroll";
-                isTransitioning = false; // End transition
-            });
+            // Mulai animasi grow-in sinkron dengan durasi scroll
+            setTimeout(() => {
+                lastEls.forEach(el => {
+                    el.classList.add('grow-anim');
+                    el.classList.remove('grow-start');
+                });
+                smoothScrollTo(targetY, 4000).then(() => {
+                    // Setelah scroll selesai: tandai animasi selesai, tampilkan teks pertama otomatis
+                    lastParallaxAnimRunning = false;
+                    lastParallaxAnimDone = true;
+                    mode = "scroll";
+                    isTransitioning = false; // End transition
+                    // Pastikan teks pertama langsung muncul
+                    showText(currentSection, 0);
+                });
+            }, 50);
         }
     }
 }
@@ -735,6 +757,10 @@ function updateLastParallax(value) {
     // Get last parallax section to determine when to start parallax
     let lastParallaxSection = document.querySelector('.last-parallax');
     if (!lastParallaxSection) return;
+    // Nonaktifkan efek parallax naik-turun ketika animasi grow-in berjalan atau sudah selesai
+    if (lastParallaxAnimRunning || lastParallaxAnimDone) {
+        return;
+    }
     
     let lastParallaxRect = lastParallaxSection.getBoundingClientRect();
     let lastParallaxTop = lastParallaxRect.top + window.scrollY;
@@ -966,6 +992,11 @@ function handleClick(e) {
     // Handle scroll mode
     const middle = window.innerHeight / 2;
     if (e.clientY < middle) {
+        // Jika berada di last-parallax, blok navigasi mundur
+        const sectionEl = sections[currentSection];
+        if (sectionEl && sectionEl.classList.contains('last-parallax')) {
+            return;
+        }
         prevText();
     } else {
         nextText();

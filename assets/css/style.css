@@ -1751,6 +1751,17 @@ header{
     transition: opacity 0.6s ease, transform 0.3s ease;
 }
 
+/* Animasi grow-in dari bawah untuk elemen last-parallax */
+.grow-start {
+    transform: translateY(60px) scale(0.9);
+    opacity: 0;
+}
+.grow-anim {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.2s ease;
+}
+
 
 /* 1. Sun - z-index: 1 (paling belakang) */
 #awan-last {
